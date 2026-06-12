@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+logs/
+uploads/
+*.log
+.git/
+.gitignore
+.eslintrc*
+tsconfig.tsbuildinfo
+coverage/

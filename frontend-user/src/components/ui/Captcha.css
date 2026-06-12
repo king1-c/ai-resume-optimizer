@@ -1,0 +1,42 @@
+.captcha-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.captcha-canvas {
+  display: block;
+  border-radius: 10px;
+  border: 1px solid var(--border, rgba(26, 26, 26, 0.12));
+  background: #fafaf7;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+  user-select: none;
+}
+
+.captcha-canvas:hover {
+  border-color: rgba(26, 26, 26, 0.32);
+}
+
+.captcha-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: 1px solid rgba(26, 26, 26, 0.16);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.8125rem;
+  color: var(--text-muted, #76766f);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.captcha-refresh:hover {
+  color: var(--text, #1a1a1a);
+  border-color: rgba(26, 26, 26, 0.32);
+  background: rgba(26, 26, 26, 0.04);
+}

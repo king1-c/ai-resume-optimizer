@@ -1,0 +1,399 @@
+/* ============================================
+   AI 简历优化器 — 用户端 "Dark Career Studio"
+   ============================================ */
+
+:root {
+  /* Surface */
+  --bg-deep: #0A0A0F;
+  --bg-elevated: #14141C;
+  --bg-card: #1A1A24;
+  --bg-overlay: rgba(20, 20, 28, 0.72);
+
+  /* Lines */
+  --line-subtle: rgba(255, 255, 255, 0.06);
+  --line-strong: rgba(255, 255, 255, 0.12);
+
+  /* Text */
+  --text-primary: #F5F5F0;
+  --text-secondary: #C4C4C8;
+  --text-muted: #8B8B95;
+  --text-faint: #5C5C66;
+
+  /* Accent — Mint Cyan */
+  --accent: #5EEAD4;
+  --accent-soft: rgba(94, 234, 212, 0.12);
+  --accent-glow: rgba(94, 234, 212, 0.35);
+
+  /* Aurora */
+  --aurora-1: #5EEAD4;
+  --aurora-2: #A78BFA;
+  --aurora-3: #5EEAD4;
+
+  /* Status */
+  --success: #34D399;
+  --warning: #FBBF24;
+  --danger: #F87171;
+
+  /* Typography */
+  --font-display: 'Fraunces', 'Source Han Serif SC', 'Songti SC', serif;
+  --font-body: 'Geist', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Menlo', monospace;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: opacity 0.2s var(--ease-out);
+}
+a:hover { opacity: 0.7; }
+
+::selection {
+  background: var(--accent);
+  color: var(--bg-deep);
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.16); }
+
+/* ============================================
+   Aurora Background
+   ============================================ */
+.aurora-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at top, rgba(94, 234, 212, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at bottom, rgba(167, 139, 250, 0.08) 0%, transparent 50%),
+    var(--bg-deep);
+}
+.aurora-container {
+  position: absolute;
+  inset: 0;
+  opacity: 0.55;
+}
+.aurora-noise {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+
+/* ============================================
+   PillNav
+   ============================================ */
+.pill-nav-container {
+  position: fixed;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+}
+
+.pill-nav {
+  --base: rgba(20, 20, 28, 0.6);
+  --pill-bg: rgba(245, 245, 240, 0.04);
+  --hover-text: #0A0A0F;
+  --pill-text: var(--text-primary);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--line-subtle);
+}
+
+/* ============================================
+   App Shell
+   ============================================ */
+.app-shell {
+  position: relative;
+  z-index: 2;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-content {
+  flex: 1;
+  position: relative;
+  z-index: 2;
+  padding: 7rem 2rem 4rem;
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.app-footer {
+  position: relative;
+  z-index: 2;
+  padding: 2rem;
+  max-width: 1280px;
+  margin: 0 auto;
+  border-top: 1px solid var(--line-subtle);
+}
+
+/* ============================================
+   Typography
+   ============================================ */
+.display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  font-variation-settings: "opsz" 144;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.muted { color: var(--text-muted); }
+.faint { color: var(--text-faint); }
+
+/* ============================================
+   Cards (custom, AntD overrides)
+   ============================================ */
+.studio-card {
+  background: var(--bg-card);
+  border: 1px solid var(--line-subtle);
+  border-radius: 20px;
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s var(--ease-out);
+}
+.studio-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 0%, rgba(94, 234, 212, 0.04) 100%);
+  pointer-events: none;
+}
+.studio-card:hover {
+  border-color: var(--line-strong);
+}
+
+/* AntD overrides for dark theme */
+.ant-card {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--line-subtle) !important;
+  border-radius: 20px !important;
+}
+.ant-card-head {
+  border-bottom: 1px solid var(--line-subtle) !important;
+  color: var(--text-primary) !important;
+  font-family: var(--font-display) !important;
+  font-size: 1.25rem !important;
+  letter-spacing: -0.01em;
+}
+.ant-card-head-title { color: var(--text-primary) !important; }
+.ant-card-body { color: var(--text-secondary) !important; }
+
+.ant-input,
+.ant-input-password,
+.ant-input-number,
+.ant-input-affix-wrapper,
+.ant-select-selector {
+  background: var(--bg-elevated) !important;
+  border-color: var(--line-subtle) !important;
+  color: var(--text-primary) !important;
+  border-radius: 12px !important;
+  font-family: var(--font-body) !important;
+}
+.ant-input:focus,
+.ant-input-affix-wrapper:focus,
+.ant-input-affix-wrapper-focused {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px var(--accent-soft) !important;
+}
+.ant-input::placeholder { color: var(--text-faint) !important; }
+
+.ant-btn {
+  border-radius: 12px !important;
+  font-family: var(--font-body) !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.01em;
+  transition: all 0.2s var(--ease-out) !important;
+}
+.ant-btn-primary {
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  color: var(--bg-deep) !important;
+  box-shadow: 0 0 24px var(--accent-glow);
+}
+.ant-btn-primary:hover {
+  background: var(--accent) !important;
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 0 32px var(--accent-glow) !important;
+}
+.ant-btn-default {
+  background: var(--bg-elevated) !important;
+  border-color: var(--line-subtle) !important;
+  color: var(--text-primary) !important;
+}
+.ant-btn-default:hover {
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+}
+.ant-btn-link {
+  color: var(--accent) !important;
+}
+
+.ant-form-item-label > label { color: var(--text-secondary) !important; }
+
+.ant-table {
+  background: transparent !important;
+  color: var(--text-primary) !important;
+}
+.ant-table-thead > tr > th {
+  background: var(--bg-elevated) !important;
+  color: var(--text-muted) !important;
+  border-bottom: 1px solid var(--line-subtle) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 0.75rem !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase;
+}
+.ant-table-tbody > tr > td {
+  background: transparent !important;
+  border-bottom: 1px solid var(--line-subtle) !important;
+  color: var(--text-secondary) !important;
+}
+.ant-table-tbody > tr:hover > td {
+  background: var(--bg-elevated) !important;
+}
+
+.ant-tag {
+  background: var(--bg-elevated) !important;
+  border-color: var(--line-subtle) !important;
+  color: var(--text-secondary) !important;
+  border-radius: 8px !important;
+  font-family: var(--font-mono) !important;
+  font-size: 0.7rem !important;
+  letter-spacing: 0.08em;
+}
+
+.ant-modal-content,
+.ant-modal-header {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--line-subtle) !important;
+}
+.ant-modal-title { color: var(--text-primary) !important; font-family: var(--font-display) !important; }
+
+.ant-pagination .ant-pagination-item a { color: var(--text-secondary) !important; }
+.ant-pagination .ant-pagination-item-active { background: var(--accent) !important; border-color: var(--accent) !important; }
+.ant-pagination .ant-pagination-item-active a { color: var(--bg-deep) !important; }
+
+.ant-message-notice-content {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--line-subtle) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+}
+
+.ant-spin-dot-item { background: var(--accent) !important; }
+
+/* ============================================
+   Buttons
+   ============================================ */
+.btn-ghost {
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--line-subtle);
+  padding: 0.625rem 1.25rem;
+  border-radius: 9999px;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s var(--ease-out);
+}
+.btn-ghost:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--bg-deep);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 9999px;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s var(--ease-out);
+  box-shadow: 0 0 24px var(--accent-glow);
+}
+.btn-primary:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 0 36px var(--accent-glow);
+}
+
+/* ============================================
+   Layout helpers
+   ============================================ */
+.stack { display: flex; flex-direction: column; }
+.row { display: flex; flex-direction: row; align-items: center; }
+.gap-1 { gap: 0.5rem; }
+.gap-2 { gap: 1rem; }
+.gap-3 { gap: 1.5rem; }
+.gap-4 { gap: 2rem; }
+
+.divider {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--line-subtle), transparent);
+  margin: 2rem 0;
+}
+
+.dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  margin-right: 8px;
+  vertical-align: middle;
+}

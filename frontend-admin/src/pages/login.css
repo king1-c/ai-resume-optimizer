@@ -1,0 +1,118 @@
+.login-stage {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+  z-index: 2;
+}
+
+.login-card {
+  width: min(440px, 100%);
+  background: var(--bg-elevated);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 2.5rem 2.5rem 2rem;
+  box-shadow: 0 1px 0 var(--line), 0 12px 40px rgba(0, 0, 0, 0.04);
+}
+
+.login-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2.5rem;
+}
+
+.login-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-width: 0;
+}
+
+.brand-text {
+  display: inline-flex;
+  flex-direction: column;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.brand-text small {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.login-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+}
+
+.login-eyebrow .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+  margin-right: 6px;
+  display: inline-block;
+}
+
+.login-title {
+  font-size: 1.75rem;
+  font-weight: 500;
+  line-height: 1.2;
+  margin: 0 0 0.5rem;
+  color: var(--text);
+}
+
+.login-sub {
+  font-size: 0.875rem;
+  margin-bottom: 2rem;
+  line-height: 1.5;
+}
+
+.login-form .ant-form-item {
+  margin-bottom: 1.25rem;
+}
+
+.login-form .ant-form-item-label > label {
+  font-family: var(--font-mono) !important;
+  font-size: 0.7rem !important;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted) !important;
+  font-weight: 500 !important;
+}
+
+.login-submit {
+  margin-top: 0.5rem;
+  font-weight: 500 !important;
+}
+
+.field-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: -0.75rem;
+  margin-bottom: 1rem;
+  padding-left: 0.25rem;
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
+}
+
+.login-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+}
