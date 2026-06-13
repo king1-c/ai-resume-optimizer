@@ -39,6 +39,9 @@ export class AIClient {
 
     if (!this.apiKey) {
       logger.warn('AI API Key 未配置，AI 功能将不可用');
+    } else {
+      // 安全：记录 API Key 的最后 4 位用于调试，不记录完整密钥
+      logger.info(`AI API 已配置，Key 后缀: ...${this.apiKey.slice(-4)}`);
     }
   }
 

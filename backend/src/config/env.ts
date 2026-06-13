@@ -59,8 +59,8 @@ const envSchema = z.object({
   RATE_LIMIT_WINDOW_MS: z.string().default('900000'),
   RATE_LIMIT_MAX_REQUESTS: z.string().default('100'),
   RATE_LIMIT_LOGIN_MAX: z.string().default('5'),
-  IP_BLOCK_THRESHOLD: z.string().default('10'),
-  IP_BLOCK_DURATION: z.string().default('3600000'),
+  IP_BLOCK_THRESHOLD: z.string().default('20'),
+  IP_BLOCK_DURATION: z.string().default('1800000'),
 
   // 文件上传
   MAX_FILE_SIZE: z.string().default('10485760'),

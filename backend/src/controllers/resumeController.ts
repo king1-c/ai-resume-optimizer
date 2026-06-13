@@ -21,6 +21,14 @@ function safeDecodeFilename(name: string): string {
 }
 
 /**
+ * 过滤文件名中的路径遍历字符
+ */
+function sanitizeFilename(name: string): string {
+  // 移除路径分隔符和空字符，防止路径遍历攻击
+  return name.replace(/[\\/:*?"<>|]/g, '_').replace(/\x00/g, '');
+}
+
+/**
  * 从磁盘读取文本内容
  */
 async function extractFileText(filePath: string, mimeType: string): Promise<string | null> {
@@ -108,10 +116,22 @@ export async function uploadResume(req: Request, res: Response): Promise<void> {
 
     const content = await extractFileText(file.path, file.mimetype);
 
+    // 检查文本提取是否成功
+    if (!content || content.trim().length === 0) {
+      logger.warn('上传拒绝: 无法提取文本内容', { mime: file.mimetype, path: file.path });
+      fs.unlinkSync(file.path); // 删除无法处理的文件
+      res.status(400).json({
+        success: false,
+        error: '无法从文件中提取文本内容，请上传包含可识别文本的 PDF 或 TXT 文件',
+        code: 'TEXT_EXTRACTION_FAILED',
+      });
+      return;
+    }
+
     const resume = await prisma.resume.create({
       data: {
         userId: userId!,
-        originalName: safeDecodeFilename(file.originalname),
+        originalName: sanitizeFilename(safeDecodeFilename(file.originalname)),
         filePath: file.path,
         fileSize: file.size,
         mimeType: file.mimetype,
@@ -170,7 +190,7 @@ export async function analyzeResumeHandler(req: Request, res: Response): Promise
     }
 
     const promptParams: ResumeAnalysisPrompt = {
-      resumeContent: resume.content || '（该文件格式暂不支持文本提取，请上传TXT文件）',
+      resumeContent: resume.content || '',
       targetPosition: target,
     };
 
@@ -289,7 +309,7 @@ export async function analyzeResumeStreamHandler(req: Request, res: Response): P
     res.flushHeaders();
 
     const promptParams: ResumeAnalysisPrompt = {
-      resumeContent: resume.content || '（该文件格式暂不支持文本提取，请上传TXT文件）',
+      resumeContent: resume.content || '',
       targetPosition: target,
     };
 
@@ -449,6 +469,8 @@ export async function getHistory(req: Request, res: Response): Promise<void> {
  */
 export async function previewResume(req: Request, res: Response): Promise<void> {
   const { id } = req.params;
+  const userId = req.user?.userId;
+  const userRole = req.user?.role;
 
   try {
     const resume = await prisma.resume.findUnique({
@@ -460,6 +482,16 @@ export async function previewResume(req: Request, res: Response): Promise<void> 
         success: false,
         error: '简历不存在',
         code: 'RESUME_NOT_FOUND',
+      });
+      return;
+    }
+
+    // 权限检查：只有管理员或简历所有者可以预览
+    if (userRole !== 'admin' && resume.userId !== userId) {
+      res.status(403).json({
+        success: false,
+        error: '无权访问此简历',
+        code: 'FORBIDDEN',
       });
       return;
     }
@@ -482,7 +514,7 @@ export async function previewResume(req: Request, res: Response): Promise<void> 
     } else {
       res.setHeader('Content-Type', 'application/octet-stream');
     }
-    res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(resume.originalName)}"`);
+    res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent(resume.originalName)}`);
     res.setHeader('Cache-Control', 'public, max-age=3600');
 
     // 流式传输文件

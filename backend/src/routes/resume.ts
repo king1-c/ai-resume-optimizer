@@ -100,8 +100,8 @@ router.get('/list', getHistory);
 // 获取简历的所有分析记录
 router.get('/:resumeId/analyses', getResumeAnalyses);
 
-// 预览原始文件（用于在线查看）
-router.get('/preview/:id', previewResume);
+// 预览原始文件（用于在线查看）- 需要认证
+router.get('/preview/:id', authenticateToken, previewResume);
 
 // 分析简历（同步）
 router.post('/analyze', analyzeResumeHandler);

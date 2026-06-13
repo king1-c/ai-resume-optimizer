@@ -64,15 +64,18 @@ function clampScore(value: number, min: number, max: number): number {
 }
 
 function parseAIResult(content: string): AnalysisResult {
+  // 去除可能存在的 BOM 头
+  const cleanContent = content.replace(/^\uFEFF/, '').trim();
+
   // 策略1: 尝试从 markdown 代码块中提取 JSON
-  const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-  const candidate = codeBlockMatch ? codeBlockMatch[1].trim() : content;
+  const codeBlockMatch = cleanContent.match(/```(?:json)?\s*([\s\S]*?)```/);
+  const candidate = codeBlockMatch ? codeBlockMatch[1].trim() : cleanContent;
 
   // 策略2: 用非贪婪匹配提取最外层 JSON 对象（支持嵌套）
   let jsonStr = '';
   const firstBrace = candidate.indexOf('{');
   if (firstBrace === -1) {
-    logger.error('AI 返回内容中未找到 JSON 对象', { contentLength: content.length });
+    logger.error('AI 返回内容中未找到 JSON 对象', { contentLength: cleanContent.length, preview: cleanContent.slice(0, 200) });
     return emptyResult('AI 返回内容中未找到 JSON 对象');
   }
 
@@ -88,7 +91,7 @@ function parseAIResult(content: string): AnalysisResult {
   }
 
   if (endIndex === -1) {
-    logger.error('AI 返回 JSON 括号不匹配', { contentLength: content.length });
+    logger.error('AI 返回 JSON 括号不匹配', { contentLength: cleanContent.length, preview: cleanContent.slice(0, 200) });
     return emptyResult('AI 返回 JSON 格式不完整（括号不匹配）');
   }
 
@@ -96,13 +99,22 @@ function parseAIResult(content: string): AnalysisResult {
 
   try {
     const parsed = JSON.parse(jsonStr);
+
+    // 验证必要字段，确保 AI 返回了有效的分析结果
+    if (typeof parsed.overallScore !== 'number') {
+      logger.error('AI 返回 JSON 缺少 overallScore 字段', { preview: jsonStr.slice(0, 200) });
+      return emptyResult('AI 返回结果格式不正确（缺少评分字段）');
+    }
+
     return {
         overallScore: clampScore(parsed.overallScore, 0, 100),
         matchScore: clampScore(parsed.matchScore, 0, 100),
-        dimensions: (parsed.dimensions || []).map((d: any) => ({
-          ...d,
+        dimensions: Array.isArray(parsed.dimensions) ? parsed.dimensions.map((d: any) => ({
+          name: d.name || '未命名维度',
           score: clampScore(d.score, 0, 20),
-        })),
+          comment: d.comment || '',
+          suggestions: Array.isArray(d.suggestions) ? d.suggestions : [],
+        })) : [],
         gapAnalysis: parsed.gapAnalysis || {
           summary: '',
           metRequirements: [],
@@ -110,15 +122,15 @@ function parseAIResult(content: string): AnalysisResult {
           skillGaps: [],
           priorityFixes: [],
         },
-        moduleAdjustments: parsed.moduleAdjustments || [],
-        generalSuggestions: parsed.generalSuggestions || [],
-        optimizedResume: parsed.optimizedResume || '',
+        moduleAdjustments: Array.isArray(parsed.moduleAdjustments) ? parsed.moduleAdjustments : [],
+        generalSuggestions: Array.isArray(parsed.generalSuggestions) ? parsed.generalSuggestions : [],
+        optimizedResume: typeof parsed.optimizedResume === 'string' ? parsed.optimizedResume : '',
         keywords: parsed.keywords || { matched: [], missing: [], suggested: [] },
-        strengths: parsed.strengths || [],
-        weaknesses: parsed.weaknesses || [],
+        strengths: Array.isArray(parsed.strengths) ? parsed.strengths : [],
+        weaknesses: Array.isArray(parsed.weaknesses) ? parsed.weaknesses : [],
       };
   } catch (error) {
-    logger.error('JSON 解析失败', { error: (error as Error).message, jsonLength: jsonStr.length });
+    logger.error('JSON 解析失败', { error: (error as Error).message, jsonStr: jsonStr.slice(0, 500) });
     return emptyResult(`JSON 解析失败: ${(error as Error).message}`);
   }
 }

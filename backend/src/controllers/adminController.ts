@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '@/config/database';
 import { logger, auditLogger } from '@/config/logger';
 import { getClientIP } from '@/middleware/security';
-import { hashPassword } from '@/utils/password';
+import { hashPassword, checkPasswordStrength } from '@/utils/password';
 import { ipBlocker } from '@/utils/ipBlocker';
 import fs from 'fs';
 
@@ -770,6 +770,18 @@ export async function createAdmin(req: Request, res: Response): Promise<void> {
         success: false,
         error: '用户名已存在',
         code: 'USERNAME_EXISTS',
+      });
+      return;
+    }
+
+    // 检查密码强度
+    const strengthCheck = checkPasswordStrength(password);
+    if (!strengthCheck.isStrong) {
+      res.status(400).json({
+        success: false,
+        error: '密码强度不足',
+        code: 'WEAK_PASSWORD',
+        details: strengthCheck.feedback,
       });
       return;
     }

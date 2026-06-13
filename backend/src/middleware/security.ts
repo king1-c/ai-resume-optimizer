@@ -14,13 +14,68 @@ import { logger } from '@/config/logger.js';
 /**
  * 获取客户端真实 IP
  * 优先从可信代理头获取（需配合 trust proxy 使用）
+ * 支持多级代理和 IPv6-mapped IPv4
  */
 export function getClientIP(req: Request): string {
-  // 仅在 trust proxy 启用时使用 X-Forwarded-For
-  // express 的 req.ip 已内置处理 trust proxy 逻辑
+  // 1. 优先从 X-Forwarded-For 获取（最原始的客户端 IP 在第一个）
+  const forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) {
+    const forwardedStr = Array.isArray(forwarded) ? forwarded[0] : forwarded;
+    const ips = forwardedStr.split(',').map(ip => ip.trim()).filter(ip => ip && ip !== 'unknown');
+    // 取第一个非内网 IP（更可靠的真实客户端 IP）
+    for (const ip of ips) {
+      const cleanIP = ip.replace(/^::ffff:/, '');
+      if (!isPrivateIP(cleanIP)) {
+        return cleanIP;
+      }
+    }
+    // 如果全是内网 IP，返回第一个
+    if (ips.length > 0) {
+      return ips[0].replace(/^::ffff:/, '');
+    }
+  }
+
+  // 2. 从 X-Real-IP 获取
+  const realIP = req.headers['x-real-ip'];
+  if (realIP) {
+    const realIPStr = Array.isArray(realIP) ? realIP[0] : realIP;
+    if (realIPStr && realIPStr !== 'unknown') {
+      return realIPStr.replace(/^::ffff:/, '');
+    }
+  }
+
+  // 3. 从直接连接获取（express 的 req.ip 已内置处理 trust proxy 逻辑）
   const ip = req.ip || req.socket.remoteAddress || 'unknown';
   // 规范化 IPv6-mapped IPv4 地址
   return ip.replace(/^::ffff:/, '');
+}
+
+/**
+ * 检查是否为内网/私有 IP 地址
+ */
+function isPrivateIP(ip: string): boolean {
+  // IPv4 内网地址检查
+  const parts = ip.split('.');
+  if (parts.length === 4) {
+    const [a, b, c, d] = parts.map(Number);
+    // 10.0.0.0/8
+    if (a === 10) return true;
+    // 172.16.0.0/12
+    if (a === 172 && b >= 16 && b <= 31) return true;
+    // 192.168.0.0/16
+    if (a === 192 && b === 168) return true;
+    // 127.0.0.0/8 (localhost)
+    if (a === 127) return true;
+    // 169.254.0.0/16 (link-local)
+    if (a === 169 && b === 254) return true;
+    // 0.0.0.0
+    if (a === 0) return true;
+  }
+
+  // IPv6 localhost
+  if (ip === '::1' || ip === 'localhost') return true;
+
+  return false;
 }
 
 /**
@@ -193,6 +248,8 @@ export const rateLimitMiddleware = rateLimit({
   skip: (req: Request) => {
     // 跳过健康检查端点
     if (req.path === '/health' || req.path.startsWith('/health/')) return true;
+    // 跳过管理员接口（管理员操作本身有认证保护，不应被速率限制误封）
+    if (req.path.startsWith('/api/admin')) return true;
     // 开发环境跳过本地请求
     if (env.isDev) {
       const ip = getClientIP(req);
@@ -214,10 +271,14 @@ export const loginRateLimitMiddleware = rateLimit({
   handler: (req: Request, res: Response) => {
     const ip = getClientIP(req);
     logger.warn(`IP 触发登录速率限制: ${ip}`);
-    
-    // 记录到 IP 封禁器
-    ipBlocker.recordFailure(ip, '登录请求过于频繁');
-    
+
+    // 仅对非管理员账号记录到 IP 封禁器（避免管理员被误封）
+    const username = req.body?.username || '';
+    const isAdminLogin = username.toLowerCase().startsWith('admin') || username.length < 3;
+    if (!isAdminLogin) {
+      ipBlocker.recordFailure(ip, '登录请求过于频繁');
+    }
+
     res.status(429).json({
       error: '登录尝试次数过多',
       message: '请 15 分钟后再试，或联系管理员',
